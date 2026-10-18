@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: update_date
+        name: Update __update_date__ in __init__.py
+        entry: python scripts/update_date.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
