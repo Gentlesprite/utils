@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: update_pyroject_version
+        name: Update version in pyproject.toml
+        entry: python scripts/update_pyroject_version.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
