@@ -104,13 +104,21 @@ def get_release_by_tag(gitee_config: GiteeConfig) -> Optional[dict]:
 
 
 def update_release(gitee_config: GiteeConfig, release_id: int, release_note: str):
-    """PATCH更新已有发行版的标题与说明(不动已上传的附件)。"""
+    """PATCH更新已有发行版的标题与说明(不动已上传的附件)。
+
+    Gitee的更新接口强制要求带tag_name(缺失会返回400 "tag_name is missing"),
+    这与GitHub不同(GitHub的PATCH里tag_name是可选的),故这里必须一并提交。
+    """
     url = GITEE_RELEASE_BY_ID_API.format(
         owner=gitee_config.owner,
         repository=gitee_config.repository,
         release_id=release_id
     )
-    return __submit(gitee_config, url, {'name': gitee_config.name, 'body': release_note}, 'PATCH')
+    return __submit(gitee_config, url, {
+        'tag_name': gitee_config.tag_name,
+        'name': gitee_config.name,
+        'body': release_note
+    }, 'PATCH')
 
 
 def post_release(gitee_config: GiteeConfig, release_note: str):
