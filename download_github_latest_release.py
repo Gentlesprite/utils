@@ -94,15 +94,32 @@ def current_output_version() -> str:
 
 
 def download_assets(assets: list, token: str = '', proxy: str = '') -> None:
+    """下载最新release的.rar;以sha256(而非文件名版本)决定是否需要重新下载。
+
+    规则:
+      1. 先清理output里不属于本次release的.rar(历史版本残留),避免其被一并发送;
+      2. 本地已存在同名文件时比对sha256:一致则跳过下载,不一致(或远程未提供digest)
+         则删除后重新下载。
+    """
     os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
+    keep: set = {str(asset['name']) for asset in assets}
+    for name in os.listdir(OUTPUT_DIRECTORY):
+        if name.lower().endswith('.rar') and name not in keep:
+            os.remove(os.path.join(OUTPUT_DIRECTORY, name))
+            logging.info(f'已清理不属于本次release的rar:"{name}"。')
     for asset in assets:
         name: str = asset['name']
         url: str = asset['browser_download_url']
         size: int = int(asset.get('size') or 0)
         target: str = os.path.join(OUTPUT_DIRECTORY, name)
-        if os.path.isfile(target) and size and os.path.getsize(target) == size:
-            logging.info(f'已存在且大小一致,跳过:{name}')
-            continue
+        remote_sha: str = str(asset.get('digest') or '').split(':', 1)[-1].strip().lower()
+        if os.path.isfile(target):
+            # 远程未提供digest时无法比对,按"不一致"处理,重新下载以确保内容正确。
+            if remote_sha and get_file_hash(target, 'sha256').lower() == remote_sha:
+                logging.info(f'已存在且sha256一致,跳过:{name}')
+                continue
+            logging.info(f'已存在但sha256不一致(或远程未提供digest),删除后重新下载:{name}')
+            os.remove(target)
         logging.info(f'正在下载{name}({size / 1048576:.1f}MiB) -> {target}')
         request = Request(url=url, headers=github_headers(token))
         downloaded = 0
