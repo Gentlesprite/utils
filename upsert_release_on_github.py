@@ -23,6 +23,7 @@ from download_github_latest_release import (  # 复用GitHub请求封装:鉴权�
 GITHUB_RELEASE_API = 'https://api.github.com/repos/{owner}/{repository}/releases'
 GITHUB_RELEASE_BY_TAG_API = 'https://api.github.com/repos/{owner}/{repository}/releases/tags/{tag}'
 GITHUB_RELEASE_BY_ID_API = 'https://api.github.com/repos/{owner}/{repository}/releases/{release_id}'
+GITHUB_TAG_REF_API = 'https://api.github.com/repos/{owner}/{repository}/git/ref/tags/{tag}'
 
 
 @dataclass
@@ -42,8 +43,26 @@ class GithubConfig:
         self.proxy = resolve_proxy(self.proxy)
 
 
+def tag_exists(github_config: GithubConfig) -> bool:
+    """判断远程仓库是否已存在该tag(只查tag,不查发行版);404视为不存在,其它错误向上抛出。"""
+    url = GITHUB_TAG_REF_API.format(
+        owner=github_config.owner,
+        repository=github_config.repository,
+        tag=urllib.parse.quote(github_config.tag_name)
+    )
+    request = urllib.request.Request(url=url, headers=github_headers(github_config.token), method='GET')
+    try:
+        with __open(request, github_config.proxy) as response:
+            json.loads(response.read().decode('UTF-8'))
+            return True
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return False
+        raise
+
+
 def get_release_by_tag(github_config: GithubConfig) -> Optional[dict]:
-    """按tag查询已存在的release;不存在(404)返回None,其它错误(如401权限不足)向上抛出。"""
+    """按tag查询已存在的发行版(release);不存在(404)返回None,其它错误向上抛出。"""
     url = GITHUB_RELEASE_BY_TAG_API.format(
         owner=github_config.owner,
         repository=github_config.repository,
@@ -60,7 +79,7 @@ def get_release_by_tag(github_config: GithubConfig) -> Optional[dict]:
 
 
 def update_release(github_config: GithubConfig, release_id: int, release_note: str) -> dict:
-    """PATCH更新已有release的标题与说明。
+    """PATCH更新已有发行版的标题与说明。
 
     只改name与body,不会动已上传的附件(流水线产物不受影响);若该release是草稿,
     可在data里加'draft': False一并发布。
@@ -83,7 +102,7 @@ def update_release(github_config: GithubConfig, release_id: int, release_note: s
 
 
 def post_release(github_config: GithubConfig, release_note: str) -> dict:
-    """tag不存在时创建新release(GitHub会基于target_commitish自动创建该tag)。"""
+    """tag已存在但没有发行版时,创建发行版并写入release note。"""
     url = GITHUB_RELEASE_API.format(owner=github_config.owner, repository=github_config.repository)
     headers = github_headers(github_config.token)
     headers['Content-Type'] = 'application/json'
@@ -103,11 +122,18 @@ def post_release(github_config: GithubConfig, release_note: str) -> dict:
 
 
 def create_release_on_github(github_config: GithubConfig):
-    """创建或更新GitHub的release note:tag已存在则PATCH更新(流水线建的release走这条),
-    不存在才POST创建(GitHub对同tag重复创建会返回422 already_exists,故必须先查)。
+    """写入GitHub的release note,只针对远程仓库已存在的tag。
+
+    规则:
+      1. 远程没有这个tag    → 直接跳过,既不创建tag也不创建release;
+      2. 有tag但没有发行版  → 创建发行版并写入release note;
+      3. 有tag且已有发行版  → 更新其release note(不影响已上传的附件)。
     """
     if not github_config.token:
         logging.info('请设置环境变量:GITHUB_TOKEN。')
+        return None
+    if not tag_exists(github_config):
+        logging.info(f'远程仓库没有tag"{github_config.tag_name}",跳过(既不创建tag也不创建release)。')
         return None
     with open(github_config.release_note_path, encoding='UTF-8') as file:  # 用with确保文件句柄被关闭。
         release_note: str = file.read()
@@ -115,13 +141,13 @@ def create_release_on_github(github_config: GithubConfig):
     try:
         existing: Optional[dict] = get_release_by_tag(github_config)
         if existing and existing.get('id'):
-            logging.info(f'tag"{github_config.tag_name}"已存在release(id={existing["id"]}),改为更新说明。')
+            logging.info(f'tag"{github_config.tag_name}"已有发行版(id={existing["id"]}),更新其release note。')
             payload = update_release(github_config, existing['id'], release_note)
         else:
-            logging.info(f'tag"{github_config.tag_name}"尚无release,创建新release。')
+            logging.info(f'tag"{github_config.tag_name}"尚无发行版,创建发行版并写入release note。')
             payload = post_release(github_config, release_note)
-    except urllib.error.HTTPError as e:  # urllib遇4xx/5xx直接抛异常(不像requests返回响应),需捕获才读得到错误响应体。
-        logging.error(f'请求出错,原因:"{e}"')
+    except urllib.error.HTTPError as e:  # urllib遇4xx/5xx直接抛异常,需捕获才读得到错误响应体。
+        logging.error(f'请求出错:原因:"{e}"')
         raw: str = e.read().decode('UTF-8', errors='replace')
         try:
             payload = json.loads(raw)
