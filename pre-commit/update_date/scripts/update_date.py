@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2026/10/18 14:56
+# Time:2026-10-18 14:56:00
 # File:update_date.py
 import os
 import re

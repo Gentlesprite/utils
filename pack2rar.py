@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2025/2/24 1:12
+# Time:2025-2-24 01:12:00
 # File:pack2rar.py
 import rarfile
 

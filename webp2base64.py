@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2025/2/23 0:08
+# Time:2025-2-23 0:08:00
 # File:webp2base64.py
 from PIL import Image
 import io

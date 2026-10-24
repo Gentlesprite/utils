@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2026/3/9 22:36
+# Time:2026-03-09 22:36:00
 # File:add_executable_permission.py
 import os
 import stat
