@@ -124,7 +124,7 @@ def post_release(gitee_config: GiteeConfig, release_note: str):
     }, 'POST')
 
 
-def create_release_on_gitee(gitee_config: GiteeConfig):
+def upsert_release_on_gitee(gitee_config: GiteeConfig):
     """写入Gitee的release note,只针对远程仓库已存在的tag。
 
     规则:

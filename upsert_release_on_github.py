@@ -121,7 +121,7 @@ def post_release(github_config: GithubConfig, release_note: str) -> dict:
         return json.loads(response.read().decode('UTF-8'))
 
 
-def create_release_on_github(github_config: GithubConfig):
+def upsert_release_on_github(github_config: GithubConfig):
     """写入GitHub的release note,只针对远程仓库已存在的tag。
 
     规则:
