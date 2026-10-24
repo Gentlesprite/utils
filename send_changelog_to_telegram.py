@@ -120,7 +120,7 @@ def read_changelog(release_note_path: Optional[str]) -> str:
     if release_note_path and not os.path.isabs(release_note_path):
         release_note_path = os.path.join(PROJECT_ROOT, release_note_path)
     if not release_note_path or not os.path.isfile(release_note_path):
-        logging.info(f'未找到release note文件:"{release_note_path or RELEASE_DIRECTORY}"。')
+        logging.warning(f'未找到release note文件:"{release_note_path or RELEASE_DIRECTORY}"。')
         return ''
     with open(file=release_note_path, mode='r', encoding='UTF-8') as file:
         return file.read()
@@ -195,7 +195,7 @@ async def send_changelog_text(
                 )
             )
         except FloodWait as _e:
-            logging.info(f'发送请求频繁,需等待{_e.value}秒后重试。。')
+            logging.info(f'发送请求频繁,需等待{_e.value}秒后重试。')
             await asyncio.sleep(_e.value)
             continue
         break
@@ -312,7 +312,7 @@ async def upload_rar_media(client: pyrogram.Client, chat_id) -> pyrogram.types.M
         if media is not None:
             documents.append(media)
     if not documents:
-        logging.info('没有可上传的.rar文件。')
+        logging.warning('没有可上传的.rar文件。')
         return None
     multi_media = [
         raw.types.InputSingleMedia(media=media, random_id=client.rnd_id(), message='')
@@ -342,9 +342,6 @@ async def send_release(
         target_chat: Union[int, str] = None,
         release_note_path: Optional[str] = None
 ) -> None:
-    if not telegram_config.api_id or not telegram_config.api_hash:
-        logging.info('配置文件中未填写api_id或api_hash,无法发送。')
-        return
     chat_id = resolve_chat_id(target_chat)
     client = get_client(telegram_config)
     await client.start()
@@ -367,12 +364,6 @@ async def send_changelog(
         target_chat: Union[int, str] = None,
         release_note_path: Optional[str] = None
 ) -> None:
-    if not telegram_config.api_id or not telegram_config.api_hash:
-        logging.info('配置文件中未填写api_id或api_hash,无法发送release note。')
-        return
-    if not telegram_config.bot_token:
-        logging.info('配置文件中未填写bot_token,无法通过机器人发送富文本release note。')
-        return
     changelog = read_changelog(release_note_path=release_note_path)
     if not changelog:
         return
