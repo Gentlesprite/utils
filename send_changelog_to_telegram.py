@@ -9,7 +9,10 @@ import sys
 import hashlib
 import logging
 import asyncio
-from dataclasses import dataclass
+from dataclasses import (
+    dataclass,
+    field
+)
 from typing import (
     Union,
     Optional
@@ -63,9 +66,9 @@ class TelegramConfig:
     api_hash: str
     bot_token: str
     name: Optional[str]
-    proxy: Optional[str]
     work_directory: Optional[str]
     enable_proxy: Optional[bool]
+    proxy: Optional[str] = field(default_factory=resolve_proxy)
 
 
 def get_latest_note_path() -> str:
