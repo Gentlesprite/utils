@@ -131,7 +131,7 @@ def verify_sha256(digest_map: dict) -> bool:
             logging.info(f'sha256一致:{name}')
         else:
             all_match = False
-            logging.info(f'sha256不一致:{name} 本地={local_sha} 远程={remote_sha}')
+            logging.warning(f'sha256不一致:{name},本地={local_sha},远程={remote_sha}。')
     return all_match
 
 
@@ -145,7 +145,7 @@ def download(
     try:
         release = fetch_latest_release(repository, github_token, proxy)
     except Exception as e:
-        logging.info(f'获取最新release失败:{e}')
+        logging.error(f'获取最新release失败,原因:"{e}"')
         return DownloadResult(
             status=False,
             version=None,
@@ -173,5 +173,5 @@ def download(
     if verify_sha256(digest_map):
         logging.info('校验通过:文件sha256与远程一致。')
         return DownloadResult(status=True, version=latest_version, digest_map=digest_map)
-    logging.info('校验未通过:请对照上面的sha256不一致项。')
+    logging.warning('校验未通过:请对照上面的sha256不一致项。')
     return DownloadResult(status=False, version=latest_version, digest_map=digest_map)
