@@ -27,7 +27,7 @@ from get_file_hash import get_file_hash
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_DIRECTORY = os.path.join(PROJECT_ROOT, 'output')
-GITHUB_LATEST_RELEASE_API = 'https://api.github.com/repos/{repo}/releases/latest'
+GITHUB_LATEST_RELEASE_API = 'https://api.github.com/repos/{repository}/releases/latest'
 USER_AGENT = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
               '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')  # noqa.
 VERSION_PATTERN = re.compile(r'(\d+\.\d+\.\d+)')
@@ -54,8 +54,8 @@ def github_headers(token: str) -> dict:
     return headers
 
 
-def fetch_latest_release(repo: str, token: str = '', proxy: str = '') -> dict:
-    url = GITHUB_LATEST_RELEASE_API.format(repo=repo)
+def fetch_latest_release(repository: str, token: str = '', proxy: str = '') -> dict:
+    url = GITHUB_LATEST_RELEASE_API.format(repository=repository)
     logging.info(f'正在获取最新release:"{url}"。')
     request = Request(url=url, headers=github_headers(token))
     with __open(request, proxy) as response:
