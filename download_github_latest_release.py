@@ -145,12 +145,13 @@ def download(
     try:
         release = fetch_latest_release(repository, github_token, proxy)
     except Exception as e:
-        logging.error(f'获取最新release失败,原因:"{e}"')
-        return DownloadResult(
+        result = DownloadResult(
             status=False,
             version=None,
             digest_map=None
         )
+        logging.error(f'获取最新release失败,结果:"{result}",原因:"{e}"')
+        return result
     tag: str = release.get('tag_name') or ''
     latest_version: str = normalize_version(tag)
     rar_assets = [a for a in (release.get('assets') or []) if str(a.get('name', '')).lower().endswith('.rar')]
@@ -171,7 +172,9 @@ def download(
     # 下载完成后,用GitHub给的sha256(资产digest字段)校验本地文件是否一致。
     digest_map = {a['name']: a.get('digest', '') for a in rar_assets if a.get('digest')}
     if verify_sha256(digest_map):
-        logging.info('校验通过:文件sha256与远程一致。')
-        return DownloadResult(status=True, version=latest_version, digest_map=digest_map)
-    logging.warning('校验未通过:请对照上面的sha256不一致项。')
-    return DownloadResult(status=False, version=latest_version, digest_map=digest_map)
+        result = DownloadResult(status=True, version=latest_version, digest_map=digest_map)
+        logging.info(f'校验通过:文件sha256与远程一致,结果:"{result}"。')
+        return result
+    logging.warning('校验未通过:请对照上面的sha256不一致项,结果:"{result}"。')
+    result = DownloadResult(status=False, version=latest_version, digest_map=digest_map)
+    return result
