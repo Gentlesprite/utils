@@ -36,6 +36,11 @@ class GithubConfig:
     target_commitish: str = 'main'  # noqa
     proxy: Optional[str] = field(default_factory=resolve_proxy)
 
+    def __post_init__(self):
+        # default_factory仅在"未传proxy"时生效;显式传入'auto'/'none'/裸地址时必须在此统一解析,
+        # 否则'auto'会被当成代理地址直接交给ProxyHandler,导致连不上。resolve_proxy幂等,重复调用无副作用。
+        self.proxy = resolve_proxy(self.proxy)
+
 
 def get_release_by_tag(github_config: GithubConfig) -> Optional[dict]:
     """按tag查询已存在的release;不存在(404)返回None,其它错误(如401权限不足)向上抛出。"""
