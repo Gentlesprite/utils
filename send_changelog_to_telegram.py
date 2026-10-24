@@ -7,7 +7,6 @@ import os
 import re
 import sys
 import hashlib
-import logging
 import asyncio
 from dataclasses import (
     dataclass,
@@ -38,7 +37,7 @@ sys.argv = [os.path.join(PROJECT_ROOT, 'main.py'), '--quiet']
 try:
     from module.remote import rc  # noqa.
     from module.task import UploadTask  # noqa.
-    from scripts.detect_system_proxy import resolve_proxy  # noqa.
+    from detect_system_proxy import resolve_proxy  # noqa.
 except ImportError as e:
     print(f'缺少必要环境,原因:"{e}"。')
     sys.exit(-1)
