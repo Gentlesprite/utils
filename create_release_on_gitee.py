@@ -5,10 +5,16 @@
 # File:create_release_on_gitee.py
 import json
 import logging
-import urllib.request
 import urllib.parse
 import urllib.error
-from dataclasses import dataclass
+import urllib.request
+from typing import Optional
+from dataclasses import (
+    dataclass,
+    field
+)
+
+from detect_system_proxy import resolve_proxy
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
@@ -22,6 +28,7 @@ class GiteeConfig:
     name: str  # vx.x.x
     release_note_path: str
     target_commitish: str = 'main'  # noqa
+    proxy: Optional[str] = field(default_factory=resolve_proxy)
 
 
 def create_release_on_gitee(gitee_config: GiteeConfig):
