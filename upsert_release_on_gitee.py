@@ -20,7 +20,7 @@ GITEE_RELEASE_API = 'https://gitee.com/api/v5/repos/{owner}/{repository}/release
 GITEE_RELEASE_BY_TAG_API = 'https://gitee.com/api/v5/repos/{owner}/{repository}/releases/tags/{tag}'
 GITEE_RELEASE_BY_ID_API = 'https://gitee.com/api/v5/repos/{owner}/{repository}/releases/{release_id}'
 GITEE_TAGS_API = 'https://gitee.com/api/v5/repos/{owner}/{repository}/tags'
-USER_AGENT = 'TRMD-Release-Script'
+USER_AGENT = 'Release-Script'
 PER_PAGE = 100  # Gitee的tags接口每页最多100条。
 
 
