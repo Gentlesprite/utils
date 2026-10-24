@@ -1,6 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
+# Time:2026-10-24 22:38:13
 # File:detect_system_proxy.py
 import os
 import re
