@@ -382,9 +382,22 @@ async def send_changelog(
 def send(
         telegram_config: TelegramConfig,
         target_chat: Union[int, str] = None,
+        release_note_path: Optional[str] = None,
         upload: Optional[bool] = None
 ):
     if upload:
-        asyncio.run(send_release(telegram_config=telegram_config, target_chat=target_chat))
+        asyncio.run(
+            send_release(
+                telegram_config=telegram_config,
+                target_chat=target_chat,
+                release_note_path=release_note_path
+            )
+        )
     else:
-        asyncio.run(send_changelog(telegram_config=telegram_config, target_chat=target_chat))
+        asyncio.run(
+            send_changelog(
+                telegram_config=telegram_config,
+                target_chat=target_chat,
+                release_note_path=release_note_path
+            )
+        )
