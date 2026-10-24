@@ -27,9 +27,9 @@ class GiteeConfig:
 def create_release_on_gitee(gitee_config: GiteeConfig):
     if not gitee_config.token:
         logging.info('请设置环境变量:GITEE_ACCESS_TOKEN。')
+        return None
     owner = 'Gentlesprite'
-    repo = 'Telegram_Restricted_Media_Downloader'
-    url = f'https://gitee.com/api/v5/repos/{owner}/{repo}/releases'
+    url = f'https://gitee.com/api/v5/repos/{owner}/{gitee_config.repository}/releases'
 
     data = {
         'access_token': gitee_config.token,
