@@ -4,7 +4,6 @@
 # Time:2026-10-25 01:20:00
 # File:create_release_on_github.py
 import json
-import logging
 import urllib.error
 import urllib.request
 from dataclasses import (
@@ -13,13 +12,13 @@ from dataclasses import (
 )
 from typing import Optional
 
+from utils import logging
 from detect_system_proxy import resolve_proxy
 from download_github_latest_release import (  # 复用GitHub请求封装:鉴权头与带代理的发送(支持http/https/socks)。
     github_headers,
     __open
 )
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 GITHUB_RELEASE_API = 'https://api.github.com/repos/{owner}/{repository}/releases'
 
 

@@ -21,9 +21,14 @@ from typing import (
 import pyrogram
 from pyrogram import raw, utils, types
 from pyrogram.types import InputRichMessage
-from pyrogram.errors import FloodWait, FilePartMissing, FilePartLengthInvalid
+from pyrogram.errors import (
+    FloodWait,
+    FilePartMissing,
+    FilePartLengthInvalid
+)
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+from utils import logging
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(PROJECT_ROOT)
 sys.path.insert(0, PROJECT_ROOT)

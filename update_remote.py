@@ -5,6 +5,8 @@
 # File:update_remote.py
 import urllib.request
 
+from utils import logging
+
 
 def refresh_remote_config(url):
     '''访问远程地址，手动刷新jsdelivr缓存。'''
@@ -13,11 +15,11 @@ def refresh_remote_config(url):
         with urllib.request.urlopen(req, timeout=15) as resp:
             status = resp.getcode()
             body = resp.read().decode('utf-8', errors='ignore')
-        print('刷新成功，状态码：', status)
-        print('返回内容：', body)
+        logging.info(f'刷新远程配置成功,状态码:"{status}"。')
+        logging.info(f'刷新远程配置返回内容:"{body}"')
         return body
     except Exception as e:
-        print('刷新失败：', e)
+        logging.error(f'远程配置刷新失败,原因:"{e}"')
         return None
 
 

@@ -22,10 +22,10 @@ from urllib.request import (
 )
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from detect_system_proxy import resolve_proxy
+from utils import logging
 from get_file_hash import get_file_hash
+from detect_system_proxy import resolve_proxy
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_DIRECTORY = os.path.join(PROJECT_ROOT, 'output')
 GITHUB_LATEST_RELEASE_API = 'https://api.github.com/repos/{repository}/releases/latest'

@@ -4,7 +4,6 @@
 # Time:2026-10-25 00:41:14
 # File:create_release_on_gitee.py
 import json
-import logging
 import urllib.parse
 import urllib.error
 import urllib.request
@@ -14,9 +13,8 @@ from dataclasses import (
     field
 )
 
+from utils import logging
 from detect_system_proxy import resolve_proxy
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 
 @dataclass

@@ -6,12 +6,11 @@
 import os
 import re
 import sys
-import logging
 import platform
 
 from typing import Optional
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+from utils import logging
 
 
 def parse_proxy_url(proxy_url: str) -> Optional[dict]:
