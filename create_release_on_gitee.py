@@ -29,14 +29,14 @@ def create_release_on_gitee(gitee_config: GiteeConfig):
         logging.info('请设置环境变量:GITEE_ACCESS_TOKEN。')
         return None
     url = f'https://gitee.com/api/v5/repos/{gitee_config.owner}/{gitee_config.repository}/releases'
+    with open(gitee_config.release_note_path, encoding='UTF-8') as file:  # 用with确保文件句柄被关闭。
+        release_note: str = file.read()
 
     data = {
         'access_token': gitee_config.token,
         'tag_name': gitee_config.tag_name,
         'name': gitee_config.name,
-        'body': open(
-            gitee_config.release_note_path,
-            encoding='UTF-8').read(),
+        'body': release_note,
         'target_commitish': gitee_config.target_commitish,  # noqa.
     }
     request = urllib.request.Request(
