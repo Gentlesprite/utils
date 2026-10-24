@@ -5,8 +5,12 @@
 import os
 import re
 import sys
+import logging
 import platform
+
 from typing import Optional
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def parse_proxy_url(proxy_url: str) -> Optional[dict]:
@@ -99,14 +103,26 @@ def detect_system_proxy() -> str:
     return format_proxy(proxy)
 
 
-def main() -> int:
-    proxy = detect_system_proxy()
-    if proxy:
-        print(f'检测到系统代理:"{proxy}"。', file=sys.stderr)
-        return 0
-    print('未检测到系统代理。', file=sys.stderr)
-    return 1
+def __normalize_proxy(proxy: str) -> str:
+    proxy = (proxy or '').strip()
+    if proxy and '://' not in proxy:
+        return f'http://{proxy}'  # noqa.
+    return proxy
+
+
+def resolve_proxy(cli_proxy: Optional[str] = None) -> str:
+    value = (cli_proxy or '').strip()
+    if value.lower() in ('none', 'direct', 'off'):
+        return ''
+    if value.lower() == 'auto' or not value:
+        return __normalize_proxy(detect_system_proxy())
+    return __normalize_proxy(value)
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    proxy = detect_system_proxy()
+    if proxy:
+        logging.info(f'检测到系统代理:"{proxy}"。')
+        sys.exit(0)
+    logging.info('未检测到系统代理。')
+    sys.exit(1)
