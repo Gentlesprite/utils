@@ -5,9 +5,7 @@
 # File:download_github_latest_release.py
 import os
 import re
-import sys
 import json
-import logging
 from dataclasses import dataclass
 from typing import (
     Dict,
@@ -21,7 +19,6 @@ from urllib.request import (
     ProxyHandler
 )
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from utils import logging
 from get_file_hash import get_file_hash
 from detect_system_proxy import resolve_proxy
