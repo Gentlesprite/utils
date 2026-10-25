@@ -62,6 +62,7 @@ class BotButton:
     VIDEO_TUTORIAL: str = '🎬视频教程'
     PROXY_SELLER: str = '🛒购买代理'
     PAY: str = '💰支持作者'
+    SEARCH: str = '🔍资源搜索'
 
 
 @dataclass
@@ -188,15 +189,22 @@ async def send_changelog_text(
                         ],
                         [
                             types.InlineKeyboardButton(
-                                text=BotButton.GITHUB,
-                                url=config.get('github', rc.DEFAULT_GITHUB) + '/releases',
-                                style=pyrogram.enums.ButtonStyle.DEFAULT),
+                                text=BotButton.SEARCH,
+                                url=config.get('referral', rc.DEFAULT_REFERRAL),
+                                style=pyrogram.enums.ButtonStyle.DANGER),
                             types.InlineKeyboardButton(
                                 text=BotButton.VIDEO_TUTORIAL,
                                 url=config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL),
                                 style=pyrogram.enums.ButtonStyle.PRIMARY
                             )
                         ],
+                        [
+                            types.InlineKeyboardButton(
+                                text=BotButton.GITHUB,
+                                url=config.get('github', rc.DEFAULT_GITHUB) + '/releases',
+                                style=pyrogram.enums.ButtonStyle.DEFAULT
+                            )
+                        ]
 
                     ]
                 )
