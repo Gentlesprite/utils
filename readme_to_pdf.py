@@ -5,18 +5,18 @@
 # File:readme_to_pdf.py
 import os
 import re
-import sys
 import shutil
 import tempfile
 import subprocess
+from dataclasses import dataclass
+from typing import Optional
 
 from markdown_it import MarkdownIt
 
 from . import logging
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-README_PATH = os.path.join(PROJECT_ROOT, 'README.md')
-PDF_PATH = os.path.join(PROJECT_ROOT, 'res', '使用必读.pdf')
+
 CHROME_CANDIDATES = [
     os.path.join(os.environ.get('PROGRAMFILES', ''), 'Google', 'Chrome', 'Application', 'chrome.exe'),
     os.path.join(os.environ.get('PROGRAMFILES(X86)', ''), 'Google', 'Chrome', 'Application', 'chrome.exe'),
@@ -379,7 +379,6 @@ THEME_CSS = {
     'dark': DARK_CSS,
     'light': LIGHT_CSS,
 }
-DEFAULT_THEME = 'dark'
 GITHUB_ALERT_STYLES = {
     'note': ('ℹ️', '说明'),
     'tip': ('💡', '提示'),
@@ -387,7 +386,7 @@ GITHUB_ALERT_STYLES = {
     'warning': ('⚠️', '警告'),
     'caution': ('⛔', '当心'),
 }
-GITHUB_ALERT_PATTERN = re.compile(r'<blockquote>\s*<p>\[!(\w+)\]\s*\n?(.*?)</p>\s*</blockquote>', re.DOTALL)
+GITHUB_ALERT_PATTERN = re.compile(r'<blockquote>\s*<p>\[!(\w+)]\s*\n?(.*?)</p>\s*</blockquote>', re.DOTALL)
 RELEASE_BADGE_PATTERN = re.compile(r'<img src="https://img\.shields\.io/github/v/release/[^"]*" alt="Release">')
 HIDDEN_SUMMARY_CSS = '''
 details > summary {
@@ -408,89 +407,99 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
 '''
 
 
-def read_project_version():
-    '''读取module/__init__.py中的版本号。'''
-    init_path = os.path.join(PROJECT_ROOT, 'module', '__init__.py')
-    with open(init_path, 'r', encoding='UTF-8') as init_file:
-        matched = re.search(r"^__version__\s*=\s*'([^']+)'", init_file.read(), re.MULTILINE)
-    if matched is None:
-        logging.error('未能从module/__init__.py读取到__version__。')
+@dataclass
+class ReadmeToPDFConfig:
+    """README转PDF所需的配置项。
+
+    theme: 主题名称,取值限于dark与light。
+    readme_path: 源README.md路径。
+    pdf_path: 输出的PDF路径。
+    chrome_path: 谷歌浏览器路径,为空时自动在本机查找。
+    """
+
+    readme_path: str
+    pdf_path: str
+    theme: Optional[str] = 'dark'
+    chrome_path: Optional[str] = None
+
+
+class ReadmeToPDF:
+    """把README.md渲染为HTML并调用谷歌浏览器无头模式打印为PDF。"""
+
+    def __init__(self, config: ReadmeToPDFConfig):
+        self.config: ReadmeToPDFConfig = config
+
+    @staticmethod
+    def replace_github_alert(match):
+        """把引用块形式的GitHub提示块渲染为带图标与标题的提示卡片。"""
+        alert_type: str = match.group(1).lower()
+        icon, title = GITHUB_ALERT_STYLES.get(alert_type, ('', alert_type.capitalize()))
+        content: str = match.group(2).strip()
+        return f'<div class="markdown-alert markdown-alert-{alert_type}"><p class="markdown-alert-title">{icon} {title}</p><p>{content}</p></div>'
+
+    @staticmethod
+    def find_chrome() -> Optional[str]:
+        """在本机查找谷歌浏览器可执行文件。"""
+        for chrome_path in CHROME_CANDIDATES:
+            if os.path.isfile(chrome_path):
+                return chrome_path
+        logging.error(f'未找到谷歌浏览器,已尝试路径:"{CHROME_CANDIDATES}"。')
         return None
-    return matched.group(1)
 
+    @staticmethod
+    def read_project_version() -> Optional[str]:
+        """读取module/__init__.py中的版本号。"""
+        init_path: str = os.path.join(PROJECT_ROOT, 'module', '__init__.py')
+        with open(init_path, 'r', encoding='UTF-8') as init_file:
+            matched = re.search(r"^__version__\s*=\s*'([^']+)'", init_file.read(), re.MULTILINE)
+        if matched is None:
+            logging.error('未能从module/__init__.py读取到__version__。')
+            return None
+        return matched.group(1)
 
-def replace_github_alert(match):
-    '''把引用块形式的GitHub提示块渲染为带图标与标题的提示卡片。'''
-    alert_type = match.group(1).lower()
-    icon, title = GITHUB_ALERT_STYLES.get(alert_type, ('ℹ️', alert_type.capitalize()))
-    content = match.group(2).strip()
-    return f'<div class="markdown-alert markdown-alert-{alert_type}"><p class="markdown-alert-title">{icon} {title}</p><p>{content}</p></div>'
+    def render_html(self) -> str:
+        """渲染README.md为完整的待打印HTML。"""
+        with open(self.config.readme_path, 'r', encoding='UTF-8') as readme_file:
+            markdown_text: str = readme_file.read()
+        project_version: Optional[str] = self.read_project_version()
+        if project_version is not None:
+            # 徽章改用静态版本号,避免动态获取的版本停留在上一个已发行版本。
+            static_badge = f'<img src="https://img.shields.io/badge/release-v{project_version}-F1C40F?style=flat-square" alt="Release">'
+            markdown_text = RELEASE_BADGE_PATTERN.sub(static_badge, markdown_text)
+        converter = MarkdownIt('commonmark').enable('table')
+        body: str = converter.render(markdown_text)
+        # 给折叠块补上open属性,等价于在控制台执行展开全部details。
+        body = re.sub(r'<details>', '<details open>', body)
+        body = GITHUB_ALERT_PATTERN.sub(self.replace_github_alert, body)
+        return HTML_TEMPLATE.format(css=THEME_CSS[self.config.theme] + HIDDEN_SUMMARY_CSS, body=body)
 
-
-def render_readme_html(readme_path, theme=DEFAULT_THEME):
-    '''读取README.md并渲染为打印用的完整HTML。'''
-    with open(readme_path, 'r', encoding='UTF-8') as readme_file:
-        markdown_text = readme_file.read()
-    project_version = read_project_version()
-    if project_version is not None:
-        # 把动态获取的release徽章硬替换为代码版本号,避免显示的版本滞留在上一个已发布版本。
-        static_badge = f'<img src="https://img.shields.io/badge/release-v{project_version}-F1C40F?style=flat-square" alt="Release">'
-        markdown_text = RELEASE_BADGE_PATTERN.sub(static_badge, markdown_text)
-    converter = MarkdownIt('commonmark').enable('table')
-    body = converter.render(markdown_text)
-    # 给折叠块补上open属性，等价于在控制台执行展开全部details。
-    body = re.sub(r'<details>', '<details open>', body)
-    body = GITHUB_ALERT_PATTERN.sub(replace_github_alert, body)
-    return HTML_TEMPLATE.format(css=THEME_CSS[theme] + HIDDEN_SUMMARY_CSS, body=body)
-
-
-def find_chrome():
-    '''查找本机谷歌浏览器可执行文件。'''
-    for chrome_path in CHROME_CANDIDATES:
-        if os.path.isfile(chrome_path):
-            return chrome_path
-    logging.error(f'未找到谷歌浏览器,已尝试路径:"{CHROME_CANDIDATES}"。')
-    return None
-
-
-def export_html_to_pdf(html_path, pdf_path, chrome_path):
-    '''调用谷歌浏览器无头模式把HTML打印为PDF。'''
-    file_url = 'file:///' + html_path.replace(os.sep, '/')
-    profile_dir = tempfile.mkdtemp(prefix='trmd_readme_pdf_')
-    command = [
-        chrome_path,
-        '--headless=new',
-        '--disable-gpu',
-        '--no-first-run',
-        '--no-default-browser-check',
-        f'--user-data-dir={profile_dir}',
-        '--run-all-compositor-stages-before-draw',
-        '--virtual-time-budget=30000',
-        '--no-pdf-header-footer',
-        f'--print-to-pdf={pdf_path}',
-        file_url,
-    ]
-    subprocess.run(command, timeout=300, check=False)
-    shutil.rmtree(profile_dir, ignore_errors=True)
-
-
-def main():
-    '''把README.md导出为res/使用必读.pdf,可传入主题参数dark或light。'''
-    theme = DEFAULT_THEME
-    if len(sys.argv) > 1 and sys.argv[1] in THEME_CSS:
-        theme = sys.argv[1]
-    chrome_path = find_chrome()
-    if chrome_path is None:
-        return
-    html = render_readme_html(README_PATH, theme)
-    html_fd, html_path = tempfile.mkstemp(prefix='trmd_readme_', suffix='.html')
-    os.close(html_fd)
-    with open(html_path, 'w', encoding='UTF-8') as html_file:
-        html_file.write(html)
-    logging.info(f'已生成临时HTML:"{html_path}"。')
-    export_html_to_pdf(html_path, PDF_PATH, chrome_path)
-    os.remove(html_path)
-    if os.path.isfile(PDF_PATH):
-        logging.info(f'已导出PDF:"{PDF_PATH}"。')
-    else:
-        logging.error('导出失败,未生成PDF。')
+    def export_pdf(self) -> bool:
+        """把HTML打印为PDF并返回是否成功。"""
+        chrome_path: str = self.config.chrome_path or self.find_chrome()
+        if chrome_path is None:
+            return False
+        html: str = self.render_html()
+        html_fd, html_path = tempfile.mkstemp(prefix='trmd_readme_', suffix='.html')
+        os.close(html_fd)
+        with open(html_path, 'w', encoding='UTF-8') as html_file:
+            html_file.write(html)
+        logging.info(f'已生成临时HTML:"{html_path}"。')
+        file_url = 'file:///' + html_path.replace(os.sep, '/')
+        profile_dir = tempfile.mkdtemp(prefix='trmd_readme_pdf_')
+        command = [
+            chrome_path,
+            '--headless=new',
+            '--disable-gpu',
+            '--no-first-run',
+            '--no-default-browser-check',
+            f'--user-data-dir={profile_dir}',
+            '--run-all-compositor-stages-before-draw',
+            '--virtual-time-budget=60000',
+            '--no-pdf-header-footer',
+            f'--print-to-pdf={self.config.pdf_path}',
+            file_url,
+        ]
+        subprocess.run(command, timeout=300, check=False)
+        shutil.rmtree(profile_dir, ignore_errors=True)
+        os.remove(html_path)
+        return os.path.isfile(self.config.pdf_path)
