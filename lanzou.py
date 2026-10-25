@@ -15,6 +15,7 @@ from dataclasses import (
     dataclass,
     field
 )
+from rich.progress import Progress
 
 from detect_system_proxy import resolve_proxy
 
@@ -94,8 +95,19 @@ class Lanzou:
             ['upload_file', [base_name, file_data, 'application/octet-stream']],
         ]
         body = self.__multipart_encode(files)
+        total = len(body)
+        headers['Content-Length'] = str(total)
         headers['Cookie'] = self.config.cookies
-        request = urllib.request.Request(url, data=body, headers=headers, method='POST')
+
+        def _iter_body():
+            with Progress() as progress:
+                task = progress.add_task(base_name, total=total)
+                for i in range(0, total, 1024 * 1024):
+                    chunk = body[i:i + 1024 * 1024]
+                    progress.update(task, advance=len(chunk))
+                    yield chunk
+
+        request = urllib.request.Request(url, data=_iter_body(), headers=headers, method='POST')
         opener = urllib.request.build_opener()
         if self.config.proxy:
             opener.add_handler(urllib.request.ProxyHandler({'http': self.config.proxy, 'https': self.config.proxy}))
