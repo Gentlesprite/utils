@@ -13,9 +13,9 @@ from dataclasses import (
 )
 from typing import Optional
 
-from utils import logging
-from detect_system_proxy import resolve_proxy
-from download_github_latest_release import (  # 复用GitHub请求封装:鉴权头与带代理的发送(支持http/https/socks)。
+from . import logging
+from .detect_system_proxy import resolve_proxy
+from .download_github_latest_release import (  # 复用GitHub请求封装:鉴权头与带代理的发送(支持http/https/socks)。
     github_headers,
     __open
 )

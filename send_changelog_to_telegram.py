@@ -26,7 +26,7 @@ from pyrogram.errors import (
     FilePartLengthInvalid
 )
 
-from utils import logging
+from . import logging
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(PROJECT_ROOT)
@@ -37,7 +37,7 @@ sys.argv = [os.path.join(PROJECT_ROOT, 'main.py'), '--quiet']
 try:
     from module.remote import rc  # noqa.
     from module.task import UploadTask  # noqa.
-    from detect_system_proxy import resolve_proxy  # noqa.
+    from .detect_system_proxy import resolve_proxy  # noqa.
 except ImportError as e:
     print(f'缺少必要环境,原因:"{e}"。')
     sys.exit(-1)

@@ -19,9 +19,9 @@ from urllib.request import (
     ProxyHandler
 )
 
-from utils import logging
-from get_file_hash import get_file_hash
-from detect_system_proxy import resolve_proxy
+from . import logging
+from .get_file_hash import get_file_hash
+from .detect_system_proxy import resolve_proxy
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_DIRECTORY = os.path.join(PROJECT_ROOT, 'output')

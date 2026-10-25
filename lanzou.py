@@ -17,7 +17,7 @@ from dataclasses import (
 )
 from rich.progress import Progress
 
-from detect_system_proxy import resolve_proxy
+from .detect_system_proxy import resolve_proxy
 
 
 @dataclass

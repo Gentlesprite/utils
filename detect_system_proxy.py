@@ -10,7 +10,7 @@ import platform
 
 from typing import Optional
 
-from utils import logging
+from . import logging
 
 
 def parse_proxy_url(proxy_url: str) -> Optional[dict]:

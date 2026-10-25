@@ -5,7 +5,7 @@
 # File:update_remote.py
 import urllib.request
 
-from utils import logging
+from . import logging
 
 
 def refresh_remote_config(url):

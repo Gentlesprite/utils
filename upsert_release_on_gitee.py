@@ -13,8 +13,8 @@ from dataclasses import (
     field
 )
 
-from utils import logging
-from detect_system_proxy import resolve_proxy
+from . import logging
+from .detect_system_proxy import resolve_proxy
 
 GITEE_RELEASE_API = 'https://gitee.com/api/v5/repos/{owner}/{repository}/releases'
 GITEE_RELEASE_BY_TAG_API = 'https://gitee.com/api/v5/repos/{owner}/{repository}/releases/tags/{tag}'
