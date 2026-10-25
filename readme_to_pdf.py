@@ -150,6 +150,50 @@ hr {
   border: 0;
   border-top: 1px solid #d8dee4;
 }
+.markdown-alert {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-left: 4px solid #d0d7de;
+  border-radius: 6px;
+  background: #f6f8fa;
+}
+.markdown-alert-title {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+.markdown-alert p:not(.markdown-alert-title) {
+  margin: 0;
+}
+.markdown-alert-note {
+  border-left-color: #0969da;
+}
+.markdown-alert-note .markdown-alert-title {
+  color: #0969da;
+}
+.markdown-alert-tip {
+  border-left-color: #1f883d;
+}
+.markdown-alert-tip .markdown-alert-title {
+  color: #1f883d;
+}
+.markdown-alert-important {
+  border-left-color: #8250df;
+}
+.markdown-alert-important .markdown-alert-title {
+  color: #8250df;
+}
+.markdown-alert-warning {
+  border-left-color: #9a6700;
+}
+.markdown-alert-warning .markdown-alert-title {
+  color: #9a6700;
+}
+.markdown-alert-caution {
+  border-left-color: #cf222e;
+}
+.markdown-alert-caution .markdown-alert-title {
+  color: #cf222e;
+}
 '''
 DARK_CSS = '''
 @page {
@@ -286,12 +330,64 @@ hr {
   border: 0;
   border-top: 1px solid #21262d;
 }
+.markdown-alert {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-left: 4px solid #30363d;
+  border-radius: 6px;
+  background: #161b22;
+}
+.markdown-alert-title {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+.markdown-alert p:not(.markdown-alert-title) {
+  margin: 0;
+}
+.markdown-alert-note {
+  border-left-color: #4493f8;
+}
+.markdown-alert-note .markdown-alert-title {
+  color: #4493f8;
+}
+.markdown-alert-tip {
+  border-left-color: #3fb950;
+}
+.markdown-alert-tip .markdown-alert-title {
+  color: #3fb950;
+}
+.markdown-alert-important {
+  border-left-color: #ab7df8;
+}
+.markdown-alert-important .markdown-alert-title {
+  color: #ab7df8;
+}
+.markdown-alert-warning {
+  border-left-color: #d29922;
+}
+.markdown-alert-warning .markdown-alert-title {
+  color: #d29922;
+}
+.markdown-alert-caution {
+  border-left-color: #f85149;
+}
+.markdown-alert-caution .markdown-alert-title {
+  color: #f85149;
+}
 '''
 THEME_CSS = {
     'dark': DARK_CSS,
     'light': LIGHT_CSS,
 }
 DEFAULT_THEME = 'dark'
+GITHUB_ALERT_STYLES = {
+    'note': ('ℹ️', '说明'),
+    'tip': ('💡', '提示'),
+    'important': ('❗', '重要'),
+    'warning': ('⚠️', '警告'),
+    'caution': ('⛔', '当心'),
+}
+GITHUB_ALERT_PATTERN = re.compile(r'<blockquote>\s*<p>\[!(\w+)\]\s*\n?(.*?)</p>\s*</blockquote>', re.DOTALL)
 HTML_TEMPLATE = '''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -306,6 +402,14 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
 '''
 
 
+def replace_github_alert(match):
+    '''把引用块形式的GitHub提示块渲染为带图标与标题的提示卡片。'''
+    alert_type = match.group(1).lower()
+    icon, title = GITHUB_ALERT_STYLES.get(alert_type, ('ℹ️', alert_type.capitalize()))
+    content = match.group(2).strip()
+    return f'<div class="markdown-alert markdown-alert-{alert_type}"><p class="markdown-alert-title">{icon} {title}</p><p>{content}</p></div>'
+
+
 def render_readme_html(readme_path, theme=DEFAULT_THEME):
     '''读取README.md并渲染为打印用的完整HTML。'''
     with open(readme_path, 'r', encoding='UTF-8') as readme_file:
@@ -314,6 +418,7 @@ def render_readme_html(readme_path, theme=DEFAULT_THEME):
     body = converter.render(markdown_text)
     # 给折叠块补上open属性，等价于在控制台执行展开全部details。
     body = re.sub(r'<details>', '<details open>', body)
+    body = GITHUB_ALERT_PATTERN.sub(replace_github_alert, body)
     return HTML_TEMPLATE.format(css=THEME_CSS[theme], body=body)
 
 
