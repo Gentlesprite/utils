@@ -23,6 +23,7 @@ from detect_system_proxy import resolve_proxy
 @dataclass
 class LanzouConfig:
     cookies: str
+    folder_id: Optional[str] = '-1'
     boundary: str = '----WebKitFormBoundaryRc2hTIRnFdKHY5lG'
     proxy: Optional[str] = field(default_factory=resolve_proxy)
 
@@ -33,6 +34,17 @@ class LanzouConfig:
 class Lanzou:
     def __init__(self, config: LanzouConfig):
         self.config: LanzouConfig = config
+
+    @staticmethod
+    def __with_folder_cookie(cookie, folder_id):
+        parts = []
+        for piece in cookie.split(';'):
+            piece = piece.strip()
+            if not piece or piece.startswith('folder_id_c='):
+                continue
+            parts.append(piece)
+        parts.append(f'folder_id_c={folder_id}')
+        return '; '.join(parts)
 
     def __multipart_encode(self, fields):
         CRLF = b'\r\n'  # noqa.
@@ -91,13 +103,13 @@ class Lanzou:
             ['type', ' application/octet-stream'],
             ['lastModifiedDate', now_time],
             ['size', str(len(file_data))],
-            ['folder_id_bb_n', '-1'],
+            ['folder_id_bb_n', self.config.folder_id],
             ['upload_file', [base_name, file_data, 'application/octet-stream']],
         ]
         body = self.__multipart_encode(files)
         total = len(body)
         headers['Content-Length'] = str(total)
-        headers['Cookie'] = self.config.cookies
+        headers['Cookie'] = self.__with_folder_cookie(self.config.cookies, self.config.folder_id)
 
         def _iter_body():
             with Progress() as progress:
