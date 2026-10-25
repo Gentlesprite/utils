@@ -502,4 +502,9 @@ class ReadmeToPDF:
         subprocess.run(command, timeout=300, check=False)
         shutil.rmtree(profile_dir, ignore_errors=True)
         os.remove(html_path)
-        return os.path.isfile(self.config.pdf_path)
+        exported: bool = os.path.isfile(self.config.pdf_path)
+        if exported:
+            logging.info(f'已导出PDF:"{self.config.pdf_path}"。')
+        else:
+            logging.error(f'导出失败,未生成:"{self.config.pdf_path}"。')
+        return exported
