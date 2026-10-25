@@ -388,6 +388,7 @@ GITHUB_ALERT_STYLES = {
     'caution': ('⛔', '当心'),
 }
 GITHUB_ALERT_PATTERN = re.compile(r'<blockquote>\s*<p>\[!(\w+)\]\s*\n?(.*?)</p>\s*</blockquote>', re.DOTALL)
+RELEASE_BADGE_PATTERN = re.compile(r'<img src="https://img\.shields\.io/github/v/release/[^"]*" alt="Release">')
 HTML_TEMPLATE = '''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -402,6 +403,17 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
 '''
 
 
+def read_project_version():
+    '''读取module/__init__.py中的版本号。'''
+    init_path = os.path.join(PROJECT_ROOT, 'module', '__init__.py')
+    with open(init_path, 'r', encoding='UTF-8') as init_file:
+        matched = re.search(r"^__version__\s*=\s*'([^']+)'", init_file.read(), re.MULTILINE)
+    if matched is None:
+        logging.error('未能从module/__init__.py读取到__version__。')
+        return None
+    return matched.group(1)
+
+
 def replace_github_alert(match):
     '''把引用块形式的GitHub提示块渲染为带图标与标题的提示卡片。'''
     alert_type = match.group(1).lower()
@@ -414,6 +426,11 @@ def render_readme_html(readme_path, theme=DEFAULT_THEME):
     '''读取README.md并渲染为打印用的完整HTML。'''
     with open(readme_path, 'r', encoding='UTF-8') as readme_file:
         markdown_text = readme_file.read()
+    project_version = read_project_version()
+    if project_version is not None:
+        # 把动态获取的release徽章硬替换为代码版本号,避免显示的版本滞留在上一个已发布版本。
+        static_badge = f'<img src="https://img.shields.io/badge/release-v{project_version}-F1C40F?style=flat-square" alt="Release">'
+        markdown_text = RELEASE_BADGE_PATTERN.sub(static_badge, markdown_text)
     converter = MarkdownIt('commonmark').enable('table')
     body = converter.render(markdown_text)
     # 给折叠块补上open属性，等价于在控制台执行展开全部details。
