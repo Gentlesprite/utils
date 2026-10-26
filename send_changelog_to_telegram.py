@@ -157,6 +157,16 @@ def dedent_markdown_tables(text: str) -> str:
     return '\n'.join(result)
 
 
+def ensure_heading_newlines(text: str) -> str:
+    # 标题行前一行非空时手动补一个空行,避免Telegram富文本渲染时标题不提行。
+    result = []
+    for line in text.split('\n'):
+        if line.lstrip().startswith('#') and result and result[-1].strip() != '':
+            result.append('')
+        result.append(line)
+    return '\n'.join(result)
+
+
 async def send_changelog_text(
         client: pyrogram.Client,
         chat_id,
@@ -171,7 +181,7 @@ async def send_changelog_text(
         try:
             message = await client.send_rich_message(
                 chat_id=chat_id,
-                rich_message=InputRichMessage(markdown=dedent_markdown_tables(changelog), skip_entity_detection=True),
+                rich_message=InputRichMessage(markdown=ensure_heading_newlines(dedent_markdown_tables(changelog)), skip_entity_detection=True),
                 reply_parameters=reply_parameters,
                 reply_markup=types.InlineKeyboardMarkup(
                     [
