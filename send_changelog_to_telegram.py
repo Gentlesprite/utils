@@ -25,6 +25,9 @@ from pyrogram.errors import (
     FilePartMissing,
     FilePartLengthInvalid
 )
+from pyrogram.types.input_content.input_rich_message import (
+    _collect_mentioned_user_ids  # noqa.
+)
 
 from . import logging
 
@@ -181,7 +184,8 @@ async def send_changelog_text(
         try:
             message = await client.send_rich_message(
                 chat_id=chat_id,
-                rich_message=InputRichMessage(markdown=ensure_heading_newlines(dedent_markdown_tables(changelog)), skip_entity_detection=True),
+                rich_message=InputRichMessage(markdown=ensure_heading_newlines(dedent_markdown_tables(changelog)),
+                                              skip_entity_detection=True),
                 reply_parameters=reply_parameters,
                 reply_markup=types.InlineKeyboardMarkup(
                     [
@@ -426,3 +430,84 @@ def send(
                 release_note_path=release_note_path
             )
         )
+
+
+async def rich_message_to_input(
+        client: pyrogram.Client,
+        rich_message: 'raw.types.RichMessage'
+) -> 'raw.types.InputRichMessage':
+    user_ids = _collect_mentioned_user_ids(rich_message.blocks)
+    users = []
+    for user_id in user_ids:
+        peer = await client.resolve_peer(user_id)
+        users.append(
+            raw.types.InputUser(
+                user_id=peer.user_id,  # noqa.
+                access_hash=peer.access_hash  # noqa.
+            )
+        )
+    photos = [
+                 raw.types.InputPhoto(
+                     id=photo.id,  # noqa.
+                     access_hash=photo.access_hash,  # noqa.
+                     file_reference=photo.file_reference  # noqa.
+                 )
+                 for photo in rich_message.photos
+             ] or None
+    documents = [
+                    raw.types.InputDocument(
+                        id=document.id,  # noqa.
+                        access_hash=document.access_hash,  # noqa.
+                        file_reference=document.file_reference  # noqa.
+                    )
+                    for document in rich_message.documents
+                ] or None
+    return raw.types.InputRichMessage(
+        blocks=rich_message.blocks,
+        rtl=rich_message.rtl,
+        photos=photos,
+        documents=documents,
+        users=users or None
+    )
+
+
+async def edit_rich_message(
+        telegram_config: TelegramConfig,
+        old_link: str,
+        new_link: str
+):
+    client = get_client(telegram_config=telegram_config)
+    await client.start()
+    old_message = await client.get_messages(message_ids=old_link)
+    new_message = await client.get_messages(message_ids=new_link)
+    input_rich = await rich_message_to_input(
+        client=client,
+        rich_message=new_message.raw.rich_message
+    )
+    reply_markup = (
+        await new_message.reply_markup.write(client)
+        if new_message.reply_markup else None
+    )
+    await client.invoke(
+        raw.functions.messages.EditMessage(
+            peer=await client.resolve_peer(old_message.chat.id),
+            id=old_message.id,
+            message='',
+            rich_message=input_rich,
+            reply_markup=reply_markup
+        )
+    )
+
+
+def edit(
+        telegram_config: TelegramConfig,
+        old_link: str,
+        new_link: str
+):
+    asyncio.run(
+        edit_rich_message(
+            telegram_config=telegram_config,
+            old_link=old_link,
+            new_link=new_link
+        )
+    )
