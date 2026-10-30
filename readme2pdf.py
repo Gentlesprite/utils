@@ -387,7 +387,7 @@ GITHUB_ALERT_STYLES = {
     'caution': ('⛔', '当心'),
 }
 GITHUB_ALERT_PATTERN = re.compile(r'<blockquote>\s*<p>\[!(\w+)]\s*\n?(.*?)</p>\s*</blockquote>', re.DOTALL)
-RELEASE_BADGE_PATTERN = re.compile(r'<img src="https://img\.shields\.io/github/v/release/[^"]*" alt="Release">')
+RELEASE_BADGE_PATTERN = re.compile(r'<img src="https://img\.shields\.io/github/v/release/[^"]*" alt="Release" style="margin:0">')
 HIDDEN_SUMMARY_CSS = '''
 details > summary {
   display: none;
