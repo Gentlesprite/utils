@@ -40,6 +40,7 @@ sys.argv = [os.path.join(PROJECT_ROOT, 'main.py'), '--quiet']
 try:
     from module.remote import rc  # noqa.
     from module.task import UploadTask  # noqa.
+    from module.client import TelegramRestrictedMediaDownloaderClient  # noqa.
     from .detect_system_proxy import resolve_proxy  # noqa.
 except ImportError as e:
     print(f'缺少必要环境,原因:"{e}"。')
@@ -99,7 +100,7 @@ def get_latest_note_path() -> str:
 
 
 def get_client(telegram_config: TelegramConfig) -> pyrogram.Client:
-    return pyrogram.Client(
+    return TelegramRestrictedMediaDownloaderClient(
         name=telegram_config.name,
         api_id=telegram_config.api_id,
         api_hash=telegram_config.api_hash,
